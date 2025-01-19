@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Loader from "./Loader";
 import StarRating from "./StarRating";
+import { useKey } from "../hooks/useKey";
 const KEY = "e43d4367";
 
 export default function SelectedMovie({
@@ -17,6 +18,7 @@ export default function SelectedMovie({
   const watchedUserRating = watched.find(
     (watched) => watched.imdbId === selectedId
   )?.userRating;
+  const coutRef = useRef(0);
   const {
     Title: title,
     Year: year,
@@ -29,6 +31,23 @@ export default function SelectedMovie({
     Director: director,
     Genre: genre,
   } = selectedMovie;
+
+  const handleSetRating = () => {
+    const newMovie = {
+      ...selectedMovie,
+      imdbId: selectedId,
+      userRating,
+      countRefDecisions: coutRef.current,
+      year,
+      runtime: Number(runtime.split(" ")[0]),
+    };
+    handleWatchedMovies(newMovie);
+    closeMovie();
+  };
+
+  useEffect(() => {
+    if (userRating) coutRef.current = coutRef.current + 1;
+  }, [userRating]);
   useEffect(() => {
     async function loadMovie() {
       setIsLoading(true);
@@ -51,30 +70,7 @@ export default function SelectedMovie({
     };
   }, [title]);
 
-  useEffect(() => {
-    function callback(e) {
-      if (e.code === "Escape") {
-        closeMovie();
-      }
-    }
-    document.addEventListener("keydown", callback);
-
-    return function () {
-      document.removeEventListener("keydown", callback);
-    };
-  }, [closeMovie]);
-
-  const handleSetRating = (rating) => {
-    const newMovie = {
-      ...selectedMovie,
-      imdbId: selectedId,
-      userRating,
-      year,
-      runtime: Number(runtime.split(" ")[0]),
-    };
-    handleWatchedMovies(newMovie);
-    closeMovie();
-  };
+  useKey("escape", closeMovie);
   return (
     <div className="details" key={selectedId}>
       {isLoading ? (
